@@ -8,7 +8,7 @@ import shutil
 from logger import utils
 from tqdm import tqdm
 from tools.tools import F0_Extractor, Volume_Extractor, Units_Encoder, SpeakerEncoder
-from diffusion.vocoder import Vocoder
+from vaegan import DAV
 from logger.utils import traverse_dir
 
 
@@ -79,8 +79,7 @@ def preprocess(path, f0_extractor, volume_extractor, mel_extractor, units_encode
 
         # extract mel and volume augmentaion
         if mel_extractor is not None:
-            mel_t = mel_extractor.extract(audio_t, sample_rate)
-            mel = mel_t.squeeze().to('cpu').numpy()
+            mel = DAV.encode_from_wav44k_numpy(mel_extractor, audio)
 
             max_amp = float(torch.max(torch.abs(audio_t))) + 1e-5
             max_shift = min(1, np.log10(1 / max_amp))
@@ -90,8 +89,7 @@ def preprocess(path, f0_extractor, volume_extractor, mel_extractor, units_encode
             else:
                 keyshift = 0
 
-            aug_mel_t = mel_extractor.extract(audio_t * (10 ** log10_vol_shift), sample_rate, keyshift=keyshift)
-            aug_mel = aug_mel_t.squeeze().to('cpu').numpy()
+            aug_mel = DAV.encode_from_wav44k_numpy(mel_extractor, audio * (10 ** log10_vol_shift))
             aug_vol = volume_extractor.extract(audio * (10 ** log10_vol_shift), sr=sample_rate)
 
         # units encode
@@ -187,14 +185,8 @@ if __name__ == '__main__':
         )
 
     # initialize mel extractor
-    mel_extractor = None
     use_pitch_aug = False
-    mel_extractor = Vocoder(args.vocoder.type, args.vocoder.ckpt, device=device)
-    if mel_extractor.vocoder_sample_rate != sample_rate or mel_extractor.vocoder_hop_size != hop_size:
-        mel_extractor = None
-        print('Unmatch vocoder parameters, mel extraction is ignored!')
-    elif args.model.use_pitch_aug:
-        use_pitch_aug = True
+    mel_extractor = DAV.load_model(args.vocoder.ckpt, device=device)
 
     # initialize units encoder
     if args.data.encoder == 'cnhubertsoftfish':

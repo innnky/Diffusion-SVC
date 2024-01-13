@@ -7,7 +7,7 @@ from logger.saver import Saver
 from logger import utils
 from torch import autocast
 from torch.cuda.amp import GradScaler
-
+from vaegan import DAV
 
 def test(args, model, vocoder, loader_test, saver):
     print(' [*] testing...')
@@ -46,7 +46,7 @@ def test(args, model, vocoder, loader_test, saver):
                 method=args.infer.method,
                 k_step=args.model.k_step_max,
                 spk_emb=data['spk_emb'])
-            signal = vocoder.infer(mel, data['f0'])
+            signal = DAV.decode_to_wav44k_numpy(vocoder, mel)
             ed_time = time.time()
 
             # RTF

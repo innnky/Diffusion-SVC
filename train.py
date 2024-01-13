@@ -6,7 +6,7 @@ from logger import utils
 from diffusion.data_loaders import get_data_loaders
 from diffusion.solver import train
 from diffusion.unit2mel import Unit2Mel, Unit2MelNaive
-from diffusion.vocoder import Vocoder
+from vaegan import DAV
 
 
 def parse_args(args=None, namespace=None):
@@ -31,7 +31,7 @@ if __name__ == '__main__':
     print(' >    exp:', args.env.expdir)
     
     # load vocoder
-    vocoder = Vocoder(args.vocoder.type, args.vocoder.ckpt, device=args.device)
+    vocoder = DAV.load_model(args.vocoder.ckpt, device=args.device)
     
     # load model
     if args.model.type == 'Diffusion':
@@ -39,7 +39,7 @@ if __name__ == '__main__':
                     args.data.encoder_out_channels, 
                     args.model.n_spk,
                     args.model.use_pitch_aug,
-                    vocoder.dimension,
+                    args.model.output_channels,
                     args.model.n_layers,
                     args.model.n_chans,
                     args.model.n_hidden,
@@ -51,7 +51,7 @@ if __name__ == '__main__':
                 args.data.encoder_out_channels, 
                 args.model.n_spk,
                 args.model.use_pitch_aug,
-                vocoder.dimension,
+                args.model.output_channels,
                 args.model.n_layers,
                 args.model.n_chans,
                 use_speaker_encoder=args.model.use_speaker_encoder,
@@ -62,7 +62,7 @@ if __name__ == '__main__':
             args.data.encoder_out_channels,
             args.model.n_spk,
             args.model.use_pitch_aug,
-            vocoder.dimension,
+            args.model.output_channels,
             args.model.n_layers,
             args.model.n_chans,
             use_speaker_encoder=args.model.use_speaker_encoder,
